@@ -1,0 +1,102 @@
+#!/usr/bin/env ruby
+
+# =================================
+
+# INPUT:
+
+# `magpie Undashified Filename #source`
+# `magpie Undashified Filename URL`
+
+# OUTPUT:
+
+# =================================
+
+# ## Undashified Filename
+
+# [![Screenshot of Undashified Filename](dashified-filename.png)](http://example.com)
+
+# =================================
+
+require 'pathname'
+require 'fileutils'
+
+if ARGV.size == 1
+  args = ARGV[0].split
+else
+  args = ARGV
+end
+
+if args.size < 2
+  $stderr.puts "Usage: magpie Screenshot Title https://example.com"
+  exit(1)
+end
+
+SCREENSHOT_FOLDER = Pathname('~/dropbox-personal/utilities/screenshots/').expand_path
+if !SCREENSHOT_FOLDER.directory?
+  $stderr.puts "Magpie SCREENSHOT_FOLDER not a dir: #{SCREENSHOT_FOLDER}"
+  exit(1)
+end
+
+MAGPIE_FOLDER = Pathname('~/dropbox-personal/utilities/magpie/collection/').expand_path
+if !MAGPIE_FOLDER.directory?
+  $stderr.puts "Magpie MAGPIE_FOLDER not a dir: #{MAGPIE_FOLDER}"
+  exit(1)
+end
+
+MAGPIE_NOTES = Pathname('~/dropbox-personal/utilities/magpie/ux-magpie-collection.md').expand_path
+if !MAGPIE_NOTES.file?
+  $stderr.puts "Magpie MAGPIE_NOTES not a file: #{MAGPIE_NOTES}"
+  # system "notify", "Magpie MAGPIE_NOTES not a file: #{MAGPIE_NOTES}"
+  exit(1)
+end
+
+newest_file = SCREENSHOT_FOLDER.children.select do |path|
+  path.file? && (path.extname == '.png' || path.extname == '.gif' || path.extname == '.jpg')
+end.sort do |a,b|
+  a.mtime <=> b.mtime
+end.last
+
+if newest_file.nil?
+  $stderr.puts "Magpie found no new .PNG or .GIF or .JPG"
+  # system "notify", "Magpie found no new .PNG or .GIF or .JPG"
+  exit(2)
+else
+  extension = newest_file.extname
+end
+
+url = args[-1]
+name = args[0...-1].join(' ')
+filename = name.downcase.gsub(/[ \/']/,'-')
+magpied_image = MAGPIE_FOLDER+(filename+extension)
+
+if magpied_image.exist?
+  timestamp = Time.now.strftime('%Y-%m-%d-%H-%M-%S')
+  magpied_image = MAGPIE_FOLDER+(filename+"-#{timestamp}"+extension)
+end
+
+# puts "cp #{newest_file} #{magpied_image}"
+FileUtils.copy(newest_file, magpied_image)
+
+MAGPIE_NOTES.open('a') do | f |
+  f.puts "
+
+## #{name}
+
+[![Screenshot of #{name}](#{magpied_image.relative_path_from(MAGPIE_FOLDER.parent)})](#{url})"
+end
+
+# system "notify", "Magpie added #{name}"
+
+FileUtils.cd(MAGPIE_FOLDER.parent) do
+  # THIS LETS YOU AUTO-COMMIT NEW CONTENT TO GIT WHEN RUN! 😱
+  # system "git", "add", "."
+  # system "git", "commit", "-m", "AUTO: Magpie added #{filename}"
+end
+
+# Move successfully copied screenshot into archive folder to be deleted at a future date
+# FileUtils.mv(newest_file, SCREENSHOT_FOLDER+"archive")
+
+
+
+
+
