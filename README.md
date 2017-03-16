@@ -2,6 +2,8 @@
 
 Collect shiny UX things with pictures and notes using [Alfred](https://www.alfredapp.com/).
 
+![Magpie demo](magpie.gif)
+
 ## Features
 
 * Take a [screenshot using a keyboard shortcut](https://support.apple.com/en-au/HT201361) or [record a GIF](http://www.cockos.com/licecap/) for `magpie` to collect.
